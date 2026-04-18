@@ -1,26 +1,110 @@
 @import "tailwindcss";
 
+@theme {
+  --color-background: #131313;
+  --color-surface: #131313;
+  --color-surface-dim: #131313;
+  --color-surface-bright: #3a3939;
+  --color-surface-container-lowest: #0e0e0e;
+  --color-surface-container-low: #1c1b1b;
+  --color-surface-container: #201f1f;
+  --color-surface-container-high: #2a2a2a;
+  --color-surface-container-highest: #353534;
+  --color-surface-variant: #353534;
+  --color-on-background: #e5e2e1;
+  --color-on-surface: #e5e2e1;
+  --color-on-surface-variant: #c2c6d6;
+  --color-primary: #adc6ff;
+  --color-primary-container: #4d8eff;
+  --color-on-primary: #002e6a;
+  --color-on-primary-container: #00285d;
+  --color-secondary: #4fdbc8;
+  --color-secondary-container: #04b4a2;
+  --color-on-secondary-container: #003f38;
+  --color-tertiary: #ffb786;
+  --color-tertiary-container: #df7412;
+  --color-outline: #8c909f;
+  --color-outline-variant: #424754;
+  --font-sans: "Inter", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --font-body: "Inter", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --font-headline: "Manrope", "Avenir Next", "Segoe UI", sans-serif;
+  --font-label: "Inter", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --radius-sm: 0.125rem;
+  --radius-md: 0.25rem;
+  --radius-xl: 0.5rem;
+  --radius-2xl: 0.75rem;
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: dark;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+  background:
+    radial-gradient(circle at top left, rgba(173, 198, 255, 0.1), transparent 28%),
+    radial-gradient(circle at bottom right, rgba(79, 219, 200, 0.08), transparent 24%),
+    var(--color-background);
+  color: var(--color-on-surface);
+  font-family: var(--font-body);
+}
+
+a,
+button {
+  transition:
+    color 200ms ease,
+    background-color 200ms ease,
+    border-color 200ms ease,
+    transform 200ms ease,
+    box-shadow 200ms ease,
+    opacity 200ms ease;
+}
+
+::selection {
+  background: rgba(77, 142, 255, 0.75);
+  color: var(--color-on-primary-container);
+}
+
+@utility font-headline {
+  font-family: var(--font-headline);
+}
+
+@utility font-body {
+  font-family: var(--font-body);
+}
+
+@utility font-label {
+  font-family: var(--font-label);
+}
+
+@utility glass-panel {
+  background: rgba(42, 42, 42, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+@utility carbon-glow {
+  box-shadow: 0 0 40px rgba(173, 198, 255, 0.06);
+}
+
+@utility hero-grid {
+  background-image:
+    linear-gradient(rgba(140, 144, 159, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(140, 144, 159, 0.08) 1px, transparent 1px);
+  background-size: 80px 80px;
+  background-position: center center;
+}
+
+@utility no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }
