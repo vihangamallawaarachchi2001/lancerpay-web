@@ -718,19 +718,14 @@ export default function Page() {
 
                 <div className="flex justify-center lg:justify-end">
                   <div className="rounded-[1.75rem] bg-white p-5 shadow-2xl shadow-primary/20 transition-transform duration-500 hover:rotate-0 lg:rotate-3">
-                    <div className="flex h-48 w-48 items-center justify-center rounded-[1.5rem] bg-[linear-gradient(135deg,#111_0%,#2d2d2d_100%)] md:h-64 md:w-64">
-                      <div className="grid grid-cols-6 gap-1">
-                        {Array.from({ length: 72 }).map((_, index) => (
-                          <span
-                            key={index}
-                            className={`h-2.5 w-2.5 rounded-[2px] ${
-                              (index + Math.floor(index / 6)) % 3 === 0
-                                ? "bg-white"
-                                : "bg-transparent"
-                            }`}
-                          />
-                        ))}
-                      </div>
+                    <div className="overflow-hidden rounded-[1.5rem] bg-[linear-gradient(135deg,#111_0%,#2d2d2d_100%)]">
+                      <Image
+                        src="/LancerPayQR.png"
+                        alt={`QR code for downloading ${RELEASE.appName} ${RELEASE.versionLabel}`}
+                        width={320}
+                        height={320}
+                        className="h-48 w-48 object-cover md:h-64 md:w-64"
+                      />
                     </div>
                     <p className="mt-4 text-center text-[10px] font-bold uppercase tracking-widest text-black">
                       Scan to Install {RELEASE.versionLabel}
