@@ -1,23 +1,20 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/app/lib/supabase";
+import { supabaseServer } from "@/app/lib/supabase-server";
 import { RELEASE } from "@/app/lib/release";
 
 type DownloadPayload = {
   platform?: string;
-  version?: string;
 };
 
 export async function POST(request: Request) {
   try {
     const body = (await request.json()) as DownloadPayload;
     const platform = body.platform ?? RELEASE.platform;
-    const version = body.version ?? RELEASE.version;
     const userAgent = request.headers.get("user-agent") || "unknown";
 
-    const { error } = await supabase.from("downloads").insert([
+    const { error } = await supabaseServer.from("downloads").insert([
       {
         platform,
-        version,
         user_agent: userAgent,
       },
     ]);

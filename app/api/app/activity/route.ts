@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/app/lib/supabase";
+import { supabaseServer } from "@/app/lib/supabase-server";
 
 type ActivityPayload = {
   event?: string;
@@ -20,7 +20,7 @@ export async function POST(request: Request) {
     const body = (await request.json()) as ActivityPayload;
     const { event, app, appVersion, platform, occurredOn, activity } = body;
 
-    const { error } = await supabase.from("app_activity").insert([
+    const { error } = await supabaseServer.from("app_activity").insert([
       {
         event,
         app_name: app,
