@@ -35,6 +35,14 @@ type DashboardStats = {
   totalInvoices: number;
 };
 
+const numberFormatter = new Intl.NumberFormat("en-US");
+const dateFormatter = new Intl.DateTimeFormat("en-CA", {
+  timeZone: "UTC",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+
 const defaultStats: DashboardStats = {
   totalDownloads: 0,
   totalActivity: 0,
@@ -45,7 +53,7 @@ const defaultStats: DashboardStats = {
 
 export default function Dashboard() {
   const [stats, setStats] = useState<DashboardStats>(defaultStats);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [recentActivity, setRecentActivity] = useState<ActivityRow[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -127,7 +135,7 @@ export default function Dashboard() {
   const statsCards = [
     {
       label: "Total App Downloads",
-      value: stats.totalDownloads.toLocaleString(),
+      value: numberFormatter.format(stats.totalDownloads),
       helper: `APK: ${RELEASE.apkFileName}`,
       icon: <Download className="h-5 w-5 text-primary" />,
       border: "border-primary/20",
@@ -141,15 +149,15 @@ export default function Dashboard() {
     },
     {
       label: "Activity Reports",
-      value: stats.totalActivity.toLocaleString(),
+      value: numberFormatter.format(stats.totalActivity),
       helper: "Recent telemetry records",
       icon: <Activity className="h-5 w-5 text-tertiary" />,
       border: "border-tertiary/20",
     },
     {
       label: "Tracked Invoices",
-      value: stats.totalInvoices.toLocaleString(),
-      helper: `${stats.activeClients.toLocaleString()} active client records`,
+      value: numberFormatter.format(stats.totalInvoices),
+      helper: `${numberFormatter.format(stats.activeClients)} active client records`,
       icon: <FileText className="h-5 w-5 text-primary" />,
       border: "border-primary/20",
     },
@@ -317,7 +325,7 @@ export default function Dashboard() {
                   Downloads
                 </p>
                 <p className="mt-3 text-2xl font-black text-white">
-                  {stats.totalDownloads.toLocaleString()}
+                  {numberFormatter.format(stats.totalDownloads)}
                 </p>
               </div>
               <div className="rounded-2xl border border-white/8 bg-white/4 p-5">
@@ -325,7 +333,7 @@ export default function Dashboard() {
                   Clients
                 </p>
                 <p className="mt-3 text-2xl font-black text-white">
-                  {stats.activeClients.toLocaleString()}
+                  {numberFormatter.format(stats.activeClients)}
                 </p>
               </div>
               <div className="rounded-2xl border border-white/8 bg-white/4 p-5">
@@ -333,7 +341,7 @@ export default function Dashboard() {
                   Invoices
                 </p>
                 <p className="mt-3 text-2xl font-black text-white">
-                  {stats.totalInvoices.toLocaleString()}
+                  {numberFormatter.format(stats.totalInvoices)}
                 </p>
               </div>
             </div>
@@ -369,7 +377,7 @@ export default function Dashboard() {
                           {activity.app_version
                             ? `v${activity.app_version.replace(/^v/i, "")}`
                             : RELEASE.versionLabel}{" "}
-                          • {new Date(activity.created_at).toLocaleDateString()}
+                          • {dateFormatter.format(new Date(activity.created_at))}
                         </div>
                         <div className="mt-2 text-[10px] font-black uppercase tracking-widest text-accent">
                           {activity.clients_count ?? 0} Clients •{" "}
