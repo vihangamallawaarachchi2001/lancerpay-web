@@ -16,7 +16,12 @@ import {
   Smartphone,
   TrendingUp,
   Users,
+  LogOut,
+  Plus,
+  Save,
+  CheckCircle2,
 } from "lucide-react";
+import { adminAuth } from "@/app/lib/admin";
 
 type ActivityRow = {
   id?: string | number;
@@ -56,9 +61,21 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(false);
   const [recentActivity, setRecentActivity] = useState<ActivityRow[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [loginError, setLoginError] = useState("");
+  const [isUpdatingVersion, setIsUpdatingVersion] = useState(false);
+  const [newVersion, setNewVersion] = useState("");
+  const [versionNotes, setVersionNotes] = useState("");
+  const [updateSuccess, setUpdateSuccess] = useState(false);
 
   useEffect(() => {
-    void fetchStats();
+    const loggedIn = adminAuth.isLoggedIn();
+    setIsAuthenticated(loggedIn);
+    if (loggedIn) {
+      void fetchStats();
+    }
   }, []);
 
   async function fetchStats() {
@@ -132,6 +149,61 @@ export default function Dashboard() {
     }
   }
 
+  async function handleLogin(e: React.FormEvent) {
+    e.preventDefault();
+    setLoginError("");
+    const success = adminAuth.login(username, password);
+    if (success) {
+      setIsAuthenticated(true);
+      void fetchStats();
+    } else {
+      setLoginError("Invalid admin credentials");
+    }
+  }
+
+  function handleLogout() {
+    adminAuth.logout();
+    setIsAuthenticated(false);
+    setStats(defaultStats);
+    setRecentActivity([]);
+  }
+
+  async function handleUpdateVersion(e: React.FormEvent) {
+    e.preventDefault();
+    if (!newVersion) return;
+
+    setIsUpdatingVersion(true);
+    setErrorMessage(null);
+    setUpdateSuccess(false);
+
+    try {
+      const { error } = await supabase.from("app_versions").insert([
+        {
+          version: newVersion,
+          notes: versionNotes,
+          platform: RELEASE.platform,
+          download_url: RELEASE.apkPath,
+          is_active: true,
+        },
+      ]);
+
+      if (error) throw error;
+
+      setUpdateSuccess(true);
+      setNewVersion("");
+      setVersionNotes("");
+      void fetchStats();
+
+      // Reset success message after 3 seconds
+      setTimeout(() => setUpdateSuccess(false), 3000);
+    } catch (error) {
+      console.error("Failed to update version:", error);
+      setErrorMessage("Failed to update app version in Supabase.");
+    } finally {
+      setIsUpdatingVersion(false);
+    }
+  }
+
   const statsCards = [
     {
       label: "Total App Downloads",
@@ -162,6 +234,83 @@ export default function Dashboard() {
       border: "border-primary/20",
     },
   ];
+
+  if (!isAuthenticated) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#080808] p-6 text-white overflow-hidden">
+        <div className="fixed inset-0 -z-10 bg-[radial-gradient(circle_at_center,rgba(173,198,255,0.08),transparent)]" />
+
+        <div className="glass-card w-full max-w-md rounded-[2.5rem] border border-white/10 p-10 shadow-2xl">
+          <div className="mb-10 text-center">
+            <div className="mx-auto mb-6 relative h-20 w-20 overflow-hidden rounded-[2rem] ring-2 ring-white/10">
+              <Image
+                src="/logo.png"
+                alt="LancerPay logo"
+                fill
+                sizes="80px"
+                className="object-cover"
+                priority
+              />
+            </div>
+            <h1 className="text-3xl font-black tracking-tight">Admin Portal</h1>
+            <p className="mt-2 text-sm font-medium text-white/40">
+              Please sign in to access the control panel
+            </p>
+          </div>
+
+          <form onSubmit={handleLogin} className="space-y-5">
+            <div>
+              <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-white/40">
+                Username
+              </label>
+              <input
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-sm font-medium transition-all focus:border-primary/50 focus:bg-white/10 focus:outline-none focus:ring-4 focus:ring-primary/10"
+                placeholder="admin"
+                required
+              />
+            </div>
+            <div>
+              <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-white/40">
+                Password
+              </label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-sm font-medium transition-all focus:border-primary/50 focus:bg-white/10 focus:outline-none focus:ring-4 focus:ring-primary/10"
+                placeholder="••••••••"
+                required
+              />
+            </div>
+
+            {loginError && (
+              <p className="text-center text-xs font-bold text-red-400">
+                {loginError}
+              </p>
+            )}
+
+            <button
+              type="submit"
+              className="mt-4 w-full rounded-2xl bg-gradient-to-r from-primary to-primary-container py-4 text-sm font-black text-on-primary-container transition-all hover:brightness-110 active:scale-[0.98]"
+            >
+              Sign In
+            </button>
+          </form>
+
+          <Link
+            href="/"
+            className="mt-8 flex items-center justify-center gap-2 text-xs font-bold text-white/30 transition-colors hover:text-white/60"
+          >
+            <ArrowLeft className="h-3 w-3" />
+            Back to Home
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-[#080808] p-6 text-white md:p-12">
@@ -216,8 +365,17 @@ export default function Dashboard() {
               disabled={loading}
               className="glass flex items-center gap-3 rounded-xl px-6 py-3 text-sm font-bold transition-all active:scale-95 disabled:opacity-50"
             >
-              <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-              Refresh Data
+              <RefreshCw
+                className={`h-4 w-4 ${loading ? "animate-spin" : ""}`}
+              />
+              Refresh
+            </button>
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-3 rounded-xl border border-red-500/20 bg-red-500/10 px-6 py-3 text-sm font-bold text-red-200 transition-all hover:bg-red-500/20 active:scale-95"
+            >
+              <LogOut className="h-4 w-4" />
+              Logout
             </button>
           </div>
         </header>
@@ -247,10 +405,16 @@ export default function Dashboard() {
 
               <div className="grid gap-3 text-sm text-white/75">
                 <div className="rounded-xl border border-white/8 bg-white/4 px-4 py-3">
-                  Channel: <span className="font-semibold text-white">{RELEASE.channel}</span>
+                  Channel:{" "}
+                  <span className="font-semibold text-white">
+                    {RELEASE.channel}
+                  </span>
                 </div>
                 <div className="rounded-xl border border-white/8 bg-white/4 px-4 py-3">
-                  APK: <span className="font-semibold text-white">{RELEASE.apkFileName}</span>
+                  APK:{" "}
+                  <span className="font-semibold text-white">
+                    {RELEASE.apkFileName}
+                  </span>
                 </div>
               </div>
             </div>
@@ -258,23 +422,40 @@ export default function Dashboard() {
 
           <div className="glass-card rounded-[2rem] border border-white/8 p-8">
             <p className="font-label text-xs uppercase tracking-[0.28em] text-white/35">
-              Release Health
+              Update Version
             </p>
-            <div className="mt-6 space-y-4">
-              {[
-                "Landing page aligned to release metadata",
-                "Dashboard and API defaults aligned to current version",
-                "Direct APK downloads enabled from public assets",
-              ].map((item) => (
-                <div
-                  key={item}
-                  className="flex items-center gap-3 rounded-xl border border-white/6 bg-white/4 px-4 py-3"
+            <form onSubmit={handleUpdateVersion} className="mt-6 space-y-4">
+              <div className="flex gap-3">
+                <input
+                  type="text"
+                  value={newVersion}
+                  onChange={(e) => setNewVersion(e.target.value)}
+                  placeholder="e.g. 1.2.2"
+                  className="flex-1 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm focus:border-primary/50 focus:outline-none"
+                  required
+                />
+                <button
+                  type="submit"
+                  disabled={isUpdatingVersion}
+                  className="flex items-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-bold text-on-primary-container transition-all hover:brightness-110 disabled:opacity-50"
                 >
-                  <TrendingUp className="h-4 w-4 text-secondary" />
-                  <span className="text-sm text-white/85">{item}</span>
-                </div>
-              ))}
-            </div>
+                  {isUpdatingVersion ? (
+                    <RefreshCw className="h-4 w-4 animate-spin" />
+                  ) : updateSuccess ? (
+                    <CheckCircle2 className="h-4 w-4" />
+                  ) : (
+                    <Plus className="h-4 w-4" />
+                  )}
+                  {updateSuccess ? "Updated" : "New Release"}
+                </button>
+              </div>
+              <textarea
+                value={versionNotes}
+                onChange={(e) => setVersionNotes(e.target.value)}
+                placeholder="Release notes (optional)"
+                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm focus:border-primary/50 focus:outline-none h-20 resize-none"
+              />
+            </form>
           </div>
         </section>
 
@@ -377,7 +558,8 @@ export default function Dashboard() {
                           {activity.app_version
                             ? `v${activity.app_version.replace(/^v/i, "")}`
                             : RELEASE.versionLabel}{" "}
-                          • {dateFormatter.format(new Date(activity.created_at))}
+                          •{" "}
+                          {dateFormatter.format(new Date(activity.created_at))}
                         </div>
                         <div className="mt-2 text-[10px] font-black uppercase tracking-widest text-accent">
                           {activity.clients_count ?? 0} Clients •{" "}
