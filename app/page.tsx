@@ -840,7 +840,7 @@ export default function Page() {
                   onClick={() => trackDownload(RELEASE.platform)}
                   className="rounded-2xl bg-on-primary-container px-12 py-5 text-lg font-bold text-primary shadow-2xl hover:scale-105"
                 >
-                  Download {RELEASE.versionLabel}
+                  Download {versionLabel}
                 </button>
                 <Link
                   href="/dashboard"
@@ -873,7 +873,7 @@ export default function Page() {
                     {RELEASE.appName}
                   </span>
                   <p className="font-label text-[10px] uppercase tracking-[0.24em] text-[#C2C6D6]/50">
-                    {getVersionText()}
+                    {versionText}
                   </p>
                 </div>
               </div>
@@ -908,7 +908,7 @@ export default function Page() {
 
           <div className="flex flex-col items-center justify-between gap-6 md:flex-row">
             <p className="text-xs uppercase tracking-widest text-[#C2C6D6]/40 italic">
-              © 2026 {RELEASE.appName}. Release {RELEASE.versionLabel}.
+              © 2026 {RELEASE.appName}. Release {versionLabel}.
             </p>
             <div className="flex gap-8">
               {[Globe, MessageSquareShare, Database].map((Icon, index) => (
