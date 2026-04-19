@@ -76,6 +76,7 @@ export default function Dashboard() {
   const [isUpdatingVersion, setIsUpdatingVersion] = useState(false);
   const [newVersion, setNewVersion] = useState("");
   const [versionNotes, setVersionNotes] = useState("");
+  const [customDownloadUrl, setCustomDownloadUrl] = useState("");
   const [updateSuccess, setUpdateSuccess] = useState(false);
 
   useEffect(() => {
@@ -191,28 +192,39 @@ export default function Dashboard() {
     setUpdateSuccess(false);
 
     try {
-      const { error } = await supabase.from("app_versions").insert([
-        {
+      const response = await fetch("/api/admin/update-version", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
           version: newVersion,
           notes: versionNotes,
           platform: RELEASE.platform,
-          download_url: RELEASE.apkPath,
+          download_url: customDownloadUrl || RELEASE.apkPath,
           is_active: true,
-        },
-      ]);
+        }),
+      });
 
-      if (error) throw error;
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || "Failed to update version");
+      }
 
       setUpdateSuccess(true);
       setNewVersion("");
       setVersionNotes("");
+      setCustomDownloadUrl("");
       void fetchStats();
 
       // Reset success message after 3 seconds
       setTimeout(() => setUpdateSuccess(false), 3000);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to update version:", error);
-      setErrorMessage("Failed to update app version in Supabase.");
+      setErrorMessage(
+        error.message || "Failed to update app version in Supabase.",
+      );
     } finally {
       setIsUpdatingVersion(false);
     }
@@ -470,6 +482,13 @@ export default function Dashboard() {
                   {updateSuccess ? "Updated" : "New Release"}
                 </button>
               </div>
+              <input
+                type="text"
+                value={customDownloadUrl}
+                onChange={(e) => setCustomDownloadUrl(e.target.value)}
+                placeholder={`Download URL (Default: ${RELEASE.apkPath})`}
+                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm focus:border-primary/50 focus:outline-none"
+              />
               <textarea
                 value={versionNotes}
                 onChange={(e) => setVersionNotes(e.target.value)}

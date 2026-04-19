@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ArrowRight,
   BadgeCheck,
@@ -89,8 +89,41 @@ const footerColumns = [
   },
 ];
 
+type AppVersion = {
+  version: string;
+  downloadUrl: string;
+  notes: string;
+};
+
 export default function Page() {
   const [openFaq, setOpenFaq] = useState(0);
+  const [appData, setAppData] = useState<AppVersion>({
+    version: RELEASE.version,
+    downloadUrl: RELEASE.apkPath,
+    notes: `Current ${RELEASE.channel} release`,
+  });
+
+  useEffect(() => {
+    async function fetchLatestVersion() {
+      try {
+        const response = await fetch("/api/app/version?platform=android");
+        const data = await response.json();
+        if (data.availableVersion) {
+          setAppData({
+            version: data.availableVersion,
+            downloadUrl: data.downloadUrl,
+            notes: data.notes,
+          });
+        }
+      } catch (error) {
+        console.error("Failed to fetch latest version:", error);
+      }
+    }
+    void fetchLatestVersion();
+  }, []);
+
+  const versionLabel = `v${appData.version.replace(/^v/i, "")}`;
+  const versionText = `${versionLabel} (${RELEASE.channel})`;
 
   const trackDownload = async (platform: string) => {
     try {
@@ -99,12 +132,15 @@ export default function Page() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ platform, version: RELEASE.version }),
+        body: JSON.stringify({ platform, version: appData.version }),
       });
 
       const link = document.createElement("a");
-      link.href = RELEASE.apkPath;
-      link.download = RELEASE.apkFileName;
+      link.href = appData.downloadUrl;
+      // Extract filename from URL or use a fallback
+      const fileName =
+        appData.downloadUrl.split("/").pop() || RELEASE.apkFileName;
+      link.download = fileName;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -135,7 +171,7 @@ export default function Page() {
                 {RELEASE.appName}
               </span>
               <span className="font-label text-[10px] uppercase tracking-[0.24em] text-on-surface-variant">
-                {getVersionText()}
+                {versionText}
               </span>
             </div>
           </div>
@@ -163,7 +199,7 @@ export default function Page() {
               onClick={() => trackDownload(RELEASE.platform)}
               className="rounded-md bg-gradient-to-r from-primary to-primary-container px-5 py-2.5 font-bold text-on-primary-container active:scale-95"
             >
-              Download {RELEASE.versionLabel}
+              Download {versionLabel}
             </button>
           </div>
         </nav>
@@ -180,7 +216,7 @@ export default function Page() {
               <div className="inline-flex items-center gap-2 rounded-full border border-outline-variant/20 bg-surface-container-high px-3 py-1">
                 <span className="h-2 w-2 rounded-full bg-secondary" />
                 <span className="font-label text-xs uppercase tracking-[0.28em] text-on-surface-variant">
-                  Release {RELEASE.versionLabel} Now Live
+                  Release {versionLabel} Now Live
                 </span>
               </div>
 
@@ -195,9 +231,9 @@ export default function Page() {
               </h1>
 
               <p className="max-w-xl text-lg leading-relaxed text-on-surface-variant md:text-xl">
-                {RELEASE.appName} {RELEASE.versionLabel} is the high-clarity
-                freelance finance workspace for faster invoicing, cleaner client
-                tracking, and a stronger release-ready mobile experience.
+                {RELEASE.appName} {versionLabel} is the high-clarity freelance
+                finance workspace for faster invoicing, cleaner client tracking,
+                and a stronger release-ready mobile experience.
               </p>
 
               <div className="flex flex-col gap-4 pt-4 sm:flex-row">
@@ -205,7 +241,7 @@ export default function Page() {
                   onClick={() => trackDownload(RELEASE.platform)}
                   className="flex items-center justify-center gap-2 rounded-xl bg-primary px-8 py-4 font-bold text-on-primary shadow-xl shadow-primary/10 hover:brightness-110"
                 >
-                  Download {RELEASE.versionLabel}
+                  Download {versionLabel}
                   <ArrowRight className="h-5 w-5" />
                 </button>
                 <Link
@@ -236,7 +272,7 @@ export default function Page() {
                         {RELEASE.appName} Mobile
                       </p>
                       <p className="font-label text-[11px] uppercase tracking-[0.24em] text-on-surface-variant">
-                        Release {RELEASE.versionLabel}
+                        Release {versionLabel}
                       </p>
                     </div>
                   </div>
@@ -269,7 +305,7 @@ export default function Page() {
                             Production Release
                           </p>
                           <p className="text-xs text-on-surface-variant">
-                            {getVersionText()}
+                            {versionText}
                           </p>
                         </div>
                       </div>
@@ -285,7 +321,7 @@ export default function Page() {
                       </p>
                       <div className="space-y-3">
                         {[
-                          `Version ${RELEASE.version}`,
+                          `Version ${appData.version}`,
                           `${RELEASE.platform} APK`,
                           "Premium landing page refresh",
                         ].map((item) => (
@@ -302,7 +338,7 @@ export default function Page() {
                       className="flex items-center justify-center gap-2 rounded-[1.25rem] bg-white px-5 py-4 font-bold text-black hover:bg-on-surface"
                     >
                       <Download className="h-5 w-5" />
-                      Install {RELEASE.versionLabel}
+                      Install {versionLabel}
                     </button>
                   </div>
                 </div>
@@ -317,14 +353,16 @@ export default function Page() {
               Trusted by the world&apos;s most elite agencies
             </p>
             <div className="flex flex-wrap items-center justify-center gap-10 opacity-40 grayscale transition-all duration-700 hover:opacity-80 hover:grayscale-0 md:gap-20">
-              {["VERTEX", "NEXUS", "Quantum", "Shift.", "ORBIS"].map((brand) => (
-                <span
-                  key={brand}
-                  className="font-headline text-2xl font-extrabold tracking-tighter text-white"
-                >
-                  {brand}
-                </span>
-              ))}
+              {["VERTEX", "NEXUS", "Quantum", "Shift.", "ORBIS"].map(
+                (brand) => (
+                  <span
+                    key={brand}
+                    className="font-headline text-2xl font-extrabold tracking-tighter text-white"
+                  >
+                    {brand}
+                  </span>
+                ),
+              )}
             </div>
           </div>
         </section>
@@ -573,11 +611,11 @@ export default function Page() {
               <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-outline-variant/20 bg-surface-container-high px-3 py-1">
                 <Sparkles className="h-4 w-4 text-primary" />
                 <span className="font-label text-[11px] uppercase tracking-[0.24em] text-on-surface-variant">
-                  Why {RELEASE.appName} {RELEASE.versionLabel} feels better
+                  Why {RELEASE.appName} {versionLabel} feels better
                 </span>
               </div>
               <h2 className="font-headline mb-4 text-3xl font-bold text-white md:text-4xl">
-                Old World vs. {RELEASE.appName}
+                Old World vs. {RELEASE.appName} {versionLabel}
               </h2>
               <p className="mx-auto max-w-2xl text-on-surface-variant">
                 A more polished release experience should look sharper here too,
@@ -625,9 +663,7 @@ export default function Page() {
                   <div
                     key={row.feature}
                     className={`grid grid-cols-1 gap-4 px-8 py-7 md:grid-cols-3 md:items-center ${
-                      index % 2 === 0
-                        ? "bg-white/[0.02]"
-                        : "bg-transparent"
+                      index % 2 === 0 ? "bg-white/[0.02]" : "bg-transparent"
                     }`}
                   >
                     <div className="text-sm font-medium text-white">
@@ -678,7 +714,7 @@ export default function Page() {
                           Download APK
                         </h4>
                         <p className="text-sm text-on-surface-variant">
-                          Version {RELEASE.version} ({RELEASE.channel}).
+                          Version {appData.version} ({RELEASE.channel}).
                           Production-ready Android build linked directly from
                           the public release file.
                         </p>
@@ -707,7 +743,7 @@ export default function Page() {
                       className="flex items-center gap-3 rounded-xl bg-white px-8 py-4 font-bold text-black hover:bg-on-surface"
                     >
                       <Download className="h-5 w-5" />
-                      Download {RELEASE.versionLabel}
+                      Download {versionLabel}
                     </button>
                     <button className="flex items-center gap-3 rounded-xl border border-outline-variant/20 bg-surface-container-high px-8 py-4 font-bold text-white hover:border-primary/40">
                       <MessageSquareShare className="h-5 w-5" />
@@ -728,7 +764,7 @@ export default function Page() {
                       />
                     </div>
                     <p className="mt-4 text-center text-[10px] font-bold uppercase tracking-widest text-black">
-                      Scan to Install {RELEASE.versionLabel}
+                      Scan to Install {versionLabel}
                     </p>
                   </div>
                 </div>
@@ -744,7 +780,8 @@ export default function Page() {
                 Intelligence Briefing
               </h2>
               <p className="mt-4 text-on-surface-variant">
-                Common questions about the {RELEASE.appName} {RELEASE.versionLabel} release.
+                Common questions about the {RELEASE.appName} {versionLabel}{" "}
+                release.
               </p>
             </div>
 
@@ -759,7 +796,9 @@ export default function Page() {
                   >
                     <button
                       onClick={() =>
-                        setOpenFaq((current) => (current === index ? -1 : index))
+                        setOpenFaq((current) =>
+                          current === index ? -1 : index,
+                        )
                       }
                       className="flex w-full items-center justify-between gap-4 text-left"
                     >
@@ -793,7 +832,8 @@ export default function Page() {
                 Ready to upgrade your financial stack?
               </h2>
               <p className="mb-12 text-xl text-on-primary opacity-90">
-                Join thousands of freelancers on {RELEASE.appName} {RELEASE.versionLabel}.
+                Join thousands of freelancers on {RELEASE.appName}{" "}
+                {versionLabel}.
               </p>
               <div className="flex flex-col justify-center gap-6 sm:flex-row">
                 <button
