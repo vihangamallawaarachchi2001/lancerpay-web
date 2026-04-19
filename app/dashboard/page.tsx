@@ -8,6 +8,7 @@ import { RELEASE, getVersionText } from "@/app/lib/release";
 import {
   Activity,
   ArrowLeft,
+  BadgeCheck,
   Download,
   FileText,
   LayoutDashboard,
@@ -29,7 +30,10 @@ type ActivityRow = {
   app_version: string | null;
   created_at: string;
   clients_count: number | null;
+  projects_count: number | null;
   invoices_count: number | null;
+  event: string | null;
+  has_business_profile: boolean | null;
 };
 
 type DashboardStats = {
@@ -38,6 +42,8 @@ type DashboardStats = {
   latestVersion: string;
   activeClients: number;
   totalInvoices: number;
+  totalProjects: number;
+  businessProfiles: number;
 };
 
 const numberFormatter = new Intl.NumberFormat("en-US");
@@ -54,6 +60,8 @@ const defaultStats: DashboardStats = {
   latestVersion: RELEASE.versionLabel,
   activeClients: 0,
   totalInvoices: 0,
+  totalProjects: 0,
+  businessProfiles: 0,
 };
 
 export default function Dashboard() {
@@ -97,10 +105,10 @@ export default function Dashboard() {
         supabase
           .from("app_activity")
           .select(
-            "id, platform, app_version, created_at, clients_count, invoices_count",
+            "id, platform, app_version, created_at, clients_count, invoices_count, projects_count, event, has_business_profile",
           )
           .order("created_at", { ascending: false })
-          .limit(6),
+          .limit(10),
       ]);
 
       if (downloads.error) {
@@ -135,6 +143,12 @@ export default function Dashboard() {
           (accumulator, current) => accumulator + (current.invoices_count ?? 0),
           0,
         ),
+        totalProjects: activityRows.reduce(
+          (accumulator, current) => accumulator + (current.projects_count ?? 0),
+          0,
+        ),
+        businessProfiles: activityRows.filter((a) => a.has_business_profile)
+          .length,
       });
       setRecentActivity(activityRows);
     } catch (error) {
@@ -229,9 +243,16 @@ export default function Dashboard() {
     {
       label: "Tracked Invoices",
       value: numberFormatter.format(stats.totalInvoices),
-      helper: `${numberFormatter.format(stats.activeClients)} active client records`,
+      helper: `${numberFormatter.format(stats.totalProjects)} project mappings`,
       icon: <FileText className="h-5 w-5 text-primary" />,
       border: "border-primary/20",
+    },
+    {
+      label: "Business Ready",
+      value: `${stats.businessProfiles}`,
+      helper: "Profiles with business setup",
+      icon: <BadgeCheck className="h-5 w-5 text-accent" />,
+      border: "border-accent/20",
     },
   ];
 
@@ -548,10 +569,15 @@ export default function Dashboard() {
                       </div>
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2 text-sm font-bold">
-                          New Report
+                          {activity.event || "User Activity"}
                           <span className="rounded-full border border-white/10 px-1.5 py-0.5 text-[10px] font-black uppercase text-white/30">
                             {activity.platform ?? RELEASE.platform}
                           </span>
+                          {activity.has_business_profile && (
+                            <span className="rounded-full bg-accent/20 border border-accent/20 px-1.5 py-0.5 text-[10px] font-black uppercase text-accent">
+                              Business Profile
+                            </span>
+                          )}
                         </div>
                         <div className="mt-1 text-xs text-white/40">
                           Version{" "}
@@ -561,9 +587,12 @@ export default function Dashboard() {
                           •{" "}
                           {dateFormatter.format(new Date(activity.created_at))}
                         </div>
-                        <div className="mt-2 text-[10px] font-black uppercase tracking-widest text-accent">
-                          {activity.clients_count ?? 0} Clients •{" "}
-                          {activity.invoices_count ?? 0} Invoices
+                        <div className="mt-2 flex flex-wrap gap-2 text-[10px] font-black uppercase tracking-widest text-accent/80">
+                          <span>{activity.clients_count ?? 0} Clients</span>
+                          <span className="text-white/20">•</span>
+                          <span>{activity.projects_count ?? 0} Projects</span>
+                          <span className="text-white/20">•</span>
+                          <span>{activity.invoices_count ?? 0} Invoices</span>
                         </div>
                       </div>
                     </div>
